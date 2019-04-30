@@ -9,11 +9,9 @@ import time
 class ComicSpider(scrapy.Spider):
     name = 'comic'
     allowed_domains = ['www.36mh.com']
-    
 
     def start_requests(self):
         self.driver = webdriver.Chrome()
-
 
     def parse(self, response):
         self.driver.get('https://www.36mh.com/manhua/heijiao/70245.html')
@@ -36,6 +34,6 @@ class ComicSpider(scrapy.Spider):
 
     def parse_chapter(self, response):
         pass
-    
+
     def parse_page(self, response):
         pass
