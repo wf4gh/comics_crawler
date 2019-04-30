@@ -9,9 +9,13 @@ import time
 class ComicSpider(scrapy.Spider):
     name = 'comic'
     allowed_domains = ['www.36mh.com']
+    
 
     def start_requests(self):
         self.driver = webdriver.Chrome()
+
+
+    def parse(self, response):
         self.driver.get('https://www.36mh.com/manhua/heijiao/70245.html')
 
         sel = Selector(text=self.driver.page_source)
@@ -28,7 +32,10 @@ class ComicSpider(scrapy.Spider):
         print(sel.xpath('//*[@id="images"]/img/@src').extract())
         print('----------------------------')
 
-        yield Request('https://www.36mh.com/manhua/heijiao/70245.html', callback=self.parse)
+        yield Request('https://www.36mh.com/manhua/heijiao/70245.html', callback=self.parse_chapter)
 
-    def parse(self, response):
+    def parse_chapter(self, response):
+        pass
+    
+    def parse_page(self, response):
         pass
