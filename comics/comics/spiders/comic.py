@@ -35,10 +35,9 @@ class ComicSpider(scrapy.Spider):
             self.parse_chapter(url=v, chapter=k)
 
     def parse_chapter(self, url, chapter=None):
-        sleep(1)
+        sleep(3)
 
         d = self.driver
-
         d.get(url)
         sel = Selector(text=d.page_source)
 
@@ -46,18 +45,35 @@ class ComicSpider(scrapy.Spider):
         start_time = time()
         while not sel.xpath('//*[@id="imgLoading"]/@style').extract():
             sleep(1)
-            sel = Selector(text=self.driver.page_source)
+            sel = Selector(text=d.page_source)
             if time() - start_time > 5:
                 raise Exception(
                     'Failed to get image at chapter: {}, with url: {}'.format(chapter, url))
 
-        print('----------------------------')
-        print(sel.xpath('//*[@id="imgLoading"]'))
-        print(sel.xpath('//*[@id="imgLoading"]/@style').extract())
-        print(sel.xpath('//*[@id="images"]/img/@src').extract())
-        print('----------------------------')
+        total_page_num = sel.xpath(
+            '//h1/following-sibling::span/text()').extract()[1][1:-1]
+        cur_page_num = sel.xpath(
+            '//h1/following-sibling::span/span/text()').extract_first()
 
-        # yield Request('https://www.36mh.com/manhua/heijiao/70245.html', callback=self.parse_chapter)
+        # print('----------------------------')
+        # print(sel.xpath('//*[@id="imgLoading"]'))
+        # print(sel.xpath('//*[@id="imgLoading"]/@style').extract())
+        # print(sel.xpath('//*[@id="images"]/img/@src').extract())
+        # print(cur_page_num, total_page_num)
+        # print('----------------------------')
 
-    def parse_page(self, response):
-        pass
+        while total_page_num != cur_page_num:
+            sel = Selector(text=d.page_source)
+            cur_page_num = sel.xpath(
+            '//h1/following-sibling::span/span/text()').extract_first()
+            img_url = sel.xpath('//*[@id="images"]/img/@src').extract_first()
+            nxt_page_btn = d.find_element_by_class_name("nextPage")
+            self.parse_page(img_url, cur_page_num, chapter)
+            nxt_page_btn.click()
+
+    def parse_page(self, img_url, page, chapter):
+        sleep(3)
+        # print('--------------------')
+        # print('got page {} at {} for chapter {}'.format(
+        #     page, img_url, chapter))
+        # print('--------------------')
