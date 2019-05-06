@@ -4,6 +4,8 @@ from selenium import webdriver
 from scrapy.selector import Selector
 from scrapy import Request
 from time import time, sleep
+import urllib
+import os
 
 
 class ComicSpider(scrapy.Spider):
@@ -35,45 +37,49 @@ class ComicSpider(scrapy.Spider):
             self.parse_chapter(url=v, chapter=k)
 
     def parse_chapter(self, url, chapter=None):
-        sleep(3)
+        if chapter and not os.path.exists('./output/{}'.format(chapter)):
+            os.makedirs('./output/{}'.format(chapter))
 
         d = self.driver
         d.get(url)
         sel = Selector(text=d.page_source)
 
         # wait for image loading. will have style="display: none;" if image loaded.
-        start_time = time()
-        while not sel.xpath('//*[@id="imgLoading"]/@style').extract():
-            sleep(1)
-            sel = Selector(text=d.page_source)
-            if time() - start_time > 5:
-                raise Exception(
-                    'Failed to get image at chapter: {}, with url: {}'.format(chapter, url))
+        # start_time = time()
+        # while not sel.xpath('//*[@id="imgLoading"]/@style').extract():
+        #     sleep(1)
+        #     sel = Selector(text=d.page_source)
+        #     if time() - start_time > 5:
+        #         raise Exception(
+        #             'Failed to get image at chapter: {}, with url: {}'.format(chapter, url))
 
         total_page_num = sel.xpath(
-            '//h1/following-sibling::span/text()').extract()[1][1:-1]
+            '//h1/following-sibling::span/text()'
+        ).extract()[1][1:-1]
         cur_page_num = sel.xpath(
-            '//h1/following-sibling::span/span/text()').extract_first()
-
-        # print('----------------------------')
-        # print(sel.xpath('//*[@id="imgLoading"]'))
-        # print(sel.xpath('//*[@id="imgLoading"]/@style').extract())
-        # print(sel.xpath('//*[@id="images"]/img/@src').extract())
-        # print(cur_page_num, total_page_num)
-        # print('----------------------------')
+            '//h1/following-sibling::span/span/text()'
+        ).extract_first()
 
         while total_page_num != cur_page_num:
             sel = Selector(text=d.page_source)
+
+            # wait for image loading. will have style="display: none;" if image loaded.
+            # start_time = time()
+            # while not sel.xpath('//*[@id="imgLoading"]/@style').extract():
+            #     sleep(1)
+            #     sel = Selector(text=d.page_source)
+            #     if time() - start_time > 5:
+            #         raise Exception(
+            #             'Failed to get image at chapter: {}, with url: {}'.format(chapter, url))
+
             cur_page_num = sel.xpath(
-            '//h1/following-sibling::span/span/text()').extract_first()
+                '//h1/following-sibling::span/span/text()').extract_first()
             img_url = sel.xpath('//*[@id="images"]/img/@src').extract_first()
             nxt_page_btn = d.find_element_by_class_name("nextPage")
             self.parse_page(img_url, cur_page_num, chapter)
             nxt_page_btn.click()
 
     def parse_page(self, img_url, page, chapter):
-        sleep(3)
-        # print('--------------------')
-        # print('got page {} at {} for chapter {}'.format(
-        #     page, img_url, chapter))
-        # print('--------------------')
+        sleep(1)
+        urllib.request.urlretrieve(
+            url=img_url, filename='./output/{}/{}.jpg'.format(chapter, page))
